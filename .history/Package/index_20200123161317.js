@@ -1,19 +1,9 @@
 const { eventDetails } = require("./Utils");
-const { voteExists } = require("./VoteTableManager");
 
-exports.handler = async (event, context, callback) => {
+exports.handler = (event, context, callback) => {
   console.log("Intercepted event: %j", event);
 
   const { voteId, userId, subjectId, vote, voteOn } = eventDetails(event);
-
-  const voteAlreadyExists = await voteExists(
-    voteId,
-    userId,
-    subjectId,
-    vote,
-    voteOn
-  );
-  console.log("Does vote exist?: %s", voteAlreadyExists);
 
   //check if vote exists in the Vote table
   //Update Subject table according to whether it exists or not.
