@@ -1,7 +1,7 @@
-exports.module.eventDetails = event => {
+module.exports.eventDetails = event => {
   const input = event.input;
 
-  const voteId = event.id;
+  const voteId = input.id;
   const userId = input.userId;
   const subjectId = input.objectId;
   const vote = input.vote;

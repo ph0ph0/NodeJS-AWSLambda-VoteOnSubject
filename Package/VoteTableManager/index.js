@@ -1,44 +1,43 @@
 const AWS = require("aws-sdk");
 const dynamo = new AWS.DynamoDB.DocumentClient({ region: `us-east-1` });
+const TableName = process.env.VOTE_TABLE_NAME;
 
-const checkVote = async voteId => {
-  const TableName = process.env.TableName;
-
-  //Check if vote already exists
-  const queryParams = {
-    TableName: TableName,
-    KeyConditionExpression: "id = :voteId",
+module.exports.saveVote = async (voteId, userId, subjectId, vote, voteOn) => {
+  const updateParams = {
+    TableName,
+    Key: { id: voteId },
+    UpdateExpression:
+      "set createdBy = :userId, objectVotedOnId = :subjectId, vote = :vote, voteOn = :voteOn",
     ExpressionAttributeValues: {
-      ":voteId": voteId
-    }
+      ":userId": userId,
+      ":subjectId": subjectId,
+      ":vote": vote,
+      ":voteOn": voteOn
+    },
+    ReturnValues: "ALL_OLD"
   };
 
   try {
-    const res = await dynamo.query(queryParams).promise();
-    console.log("Queried vote table, response: %j", res);
-    return res.length !== 0 ? true : false;
+    const oldVoteObject = await dynamo.update(updateParams).promise();
+
+    console.log("Created/updated vote: %j", oldVoteObject);
+
+    return oldVoteObject;
   } catch (error) {
-    console.log("Error querying vote table: %j", error);
+    console.log("Error updating vote table: %j", error);
   }
 };
 
-exports.module.voteExists = async (voteId, subjectId, userId, vote, voteOn) => {
-  const voteAlreadyExists = await checkVote(voteId);
-
-  const updateParams = {
-    TableName: TableName,
-    Item: {
-      id: voteId,
-      objectVotedOnId: subjectId,
-      createdBy: userId,
-      vote: vote,
-      voteOn: voteOn
-    }
+module.exports.deleteVote = async voteId => {
+  console.log("Deleting vote: %s", voteId);
+  const deleteParams = {
+    TableName,
+    Key: { id: voteId }
   };
-
-  const updatedVote = await dynamo.update(updateParams).promise();
-
-  console.log("Created/updated vote: %j", updatedVote);
-
-  return voteAlreadyExists;
+  try {
+    await dynamo.delete(deleteParams).promise();
+    console.log("Successfully deleted vote");
+  } catch (error) {
+    console.log("Error deleteing vote: %j", error);
+  }
 };
